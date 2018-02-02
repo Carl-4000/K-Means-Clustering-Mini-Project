@@ -1,0 +1,78 @@
+---
+title: "K-Means Clustering Mini-Project"
+author: "Carl Larson"
+date: "2/2/2018"
+output: pdf_document
+---
+
+First we are asked to get the proper packages set up and load the data. 
+
+```{r}
+require(cluster)
+require(rattle.data)
+require(NbClust)
+data(wine, package="rattle.data")
+head(wine)
+```
+
+##Exercise 1 -- Remove the first column from the data and scale it using the scale() function.
+
+```{r}
+df <- scale(wine[,-1])
+scale(df)
+head(df)
+```
+
+Next to use K Means clustering. First we are asking how many clusters to use? 
+
+```{r}
+wssplot <- function(data, nc=15, seed=1234){
+
+  wss <- (nrow(data)-1)*sum(apply(data,2,var))
+    for (i in 2:nc){
+		  set.seed(seed)
+	 wss[i] <- sum(kmeans(data, centers=i)$withinss)}
+	
+  plot(1:nc, wss, type="b", xlab="Number of Clusters",
+       ylab="Within groups sum of squares")
+}
+str(wssplot)
+wssplot(df)
+
+```
+
+This one seems to suggest using 3 clusters. 3 clusters represents the biggest improvement in previous error compared with the size of the next improvement in error. 
+
+```{r}
+library(NbClust)
+set.seed(1234)
+nc <- NbClust(df, min.nc=2, max.nc=15, method="kmeans")
+barplot(table(nc$Best.n[1,]),
+	          xlab="Numer of Clusters", ylab="Number of Criteria",
+		            main="Number of Clusters Chosen by 26 Criteria")
+
+```
+
+This one also seems to suggest we run 3 clusters. 0 has a high bar here for some reason, and 2 also has somewhat of a bar, but this strategy really suggests using 3 clusters.
+
+```{r}
+fit.km <- kmeans(df, 3, nstart=25)
+table(fit.km$cluster)
+table(wine$Type)
+fit.km
+
+```
+
+This is an interesting clustering, it seems to be based primarily off color. First and foremost, we see our three clusters have 3 distinct wine colors that act as the basis for the 3 clusters. We see a sum of squared errors at 44.8%, so this isn't terribly good or bad at predictions one way or another, it's decent but could likely use a larger sample size. 
+
+##Exercise 6: Visualize these clusters 
+
+```{r}
+aggregate(wine[-1], by=list(cluster=fit.km$cluster), mean)
+
+#We are asked to use clusplot() to model this
+clusplot(df, fit.km$cluster, color=TRUE)
+
+```
+
+After getting this to graph, it does look like the most sensible way to cluster this data on a 2d frame. 
